@@ -1,3 +1,20 @@
+import os
+import requests 
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+import time
+import re
+from pydantic import BaseModel,Field
+from typing import List
+load_dotenv()
+
+class RecommendedIssues(BaseModel):
+    analysis:str=Field(
+        description="Summary of recommended issues and guidance on how to fix them."
+    )
+    recommended_issues_list:List[int]=Field(
+        description="A list of integer issues numbers mentioned in the analysis. Output an empty list if none apply."
+    )
 def fetch_git_issues(language,issue_label,page=1):
     url=f'https://api.github.com/search/issues?q=is:issue label:"{issue_label}" language:{language} state:open&per_page=10&page={page}'
     headers={"Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}"}
@@ -56,24 +73,18 @@ def call_llm(git_user_input,git_messages):
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=os.getenv("NVIDIA_API_KEY")
     )
-    response=git_llm.invoke([
+
+    structured_git_llm=git_llm.with_structured_output(RecommendedIssues)
+
+    response=structured_git_llm.invoke([
         ("system","""Analyze the project issues the user wants to solve and his current coding level.
             Then filter out the projects most suitable for the user which match the user's current coding level.
             Give the user the summary of the issue and what all he needs to know for solving and contributing in fixing the respective error in a organised pattern.
-            DO NOT GIVE THE OUTPUT IN A TABLE FORMAT.
-            DO NOT ASK ANY QUESTIONS TO THE USER.
-            DO NOT PRINT THE RESULTS OF THE ISSUE UNTIL EXPLICITLY ASKED BY THE USER. 
-
-            At the very end of the response, and nothing after it,output every issue number you mentioned in the response, in this exact format:
-                ISSUES_MENTIONED: 1,3,5
-                
-            RULES for that line:
-            - Comma-separated numbers only — no spaces, no symbols, no words like "ISSUE" or "#" or any usage of "*".
-            - Include every number you referenced anywhere in your response above.
-            - If you mentioned none, write ISSUES_MENTIONED: (with nothing after the colon)."""),
-                ("user",git_user_input)
+            DO NOT give the output in a table format and DO NOT ask any questions to the user.
+            """),
+        ("user",git_user_input)
             ]+git_messages)
-    return response.content
+    return response
 
 def in_depth_llm(deep_issue_data):
     git_llm_depth=ChatOpenAI(
@@ -117,13 +128,6 @@ git_results={}
 git_messages=[]
 issue_number=1
 page=1
-import os
-import requests 
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-import time
-import re
-load_dotenv()
 
 while True:
     language_chosen=input("""WHAT CODING LANGUAGE DO YOU WORK ON?
@@ -179,7 +183,7 @@ git_user_input=input("You: ")
 start_git_response=time.time()
 git_ai_response=call_llm(git_user_input,git_messages)
 
-print(git_ai_response)
+print(git_ai_response.analysis)
 end_git_response=time.time()
 duration_git_response=end_git_response-start_git_response
 print(f"Response took {duration_git_response:.2f} seconds")
@@ -199,7 +203,7 @@ while True:
             git_user_input=input("You: ")
             start_git_response2=time.time()
             git_ai_response=call_llm(git_user_input,git_messages)
-            print(git_ai_response)
+            print(git_ai_response.analysis)
 
             end_git_response2=time.time()
             duration_git_response2=end_git_response2-start_git_response2
@@ -207,11 +211,7 @@ while True:
 
         elif more_projects=="NO":
             mentioned_numbers_int=[]
-            mentioned_numbers=re.search(r"ISSUES_MENTIONED:(.*)",git_ai_response)
-            if mentioned_numbers==None:
-                print("NO ISSUES PRINTED")
-            else:
-                mentioned_numbers_int=[int(num) for num in re.findall(r"\d+",mentioned_numbers.group(1))]
+            mentioned_numbers_int=git_ai_response.recommended_issues_list
             if len(mentioned_numbers_int)==0:
                 print("NO DESIRABLE ISSUES WERE FOUND.")
                 break
