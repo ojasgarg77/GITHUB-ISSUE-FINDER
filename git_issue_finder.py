@@ -3,7 +3,6 @@ import requests
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 import time
-import re
 from pydantic import BaseModel,Field
 from typing import List
 load_dotenv()
@@ -57,7 +56,6 @@ def clean_results(items,issue_number):
         git_body=item.get("body") or ""
         git_summary=" ".join(git_body.split()[:300])
         git_results[issue_number]=(git_result1,git_summary,git_result2)
-
         issue_number+=1
     for key,issue_data in git_results.items():
         title=issue_data[0]
@@ -107,8 +105,6 @@ LANGUAGES={
     "6":"sql",
     "7":"typescript",
     "8":"c",
-    "9":"c++",
-    "10":"c#", 
     }
 
 ISSUES={
@@ -139,8 +135,6 @@ while True:
         6. SQL
         7. TYPESCRIPT
         8. C
-        9. C++
-        10. C# 
         """).strip()
 
     if language_chosen in LANGUAGES:
@@ -189,47 +183,43 @@ duration_git_response=end_git_response-start_git_response
 print(f"Response took {duration_git_response:.2f} seconds")
 
 while True:
-    while True:
-        more_projects=input("""\nDO YOU WANT TO LOOK FOR MORE ISSUES?
-        TYPE YES IF YES
-        TYPE NO IF YOU WANT TO DIVE DEEPER INTO THE ISSUES ALREADY SHOWN.
-        """).strip().upper()
+    more_projects=input("""\nDO YOU WANT TO LOOK FOR MORE ISSUES?
+    TYPE YES IF YES
+    TYPE NO IF YOU WANT TO DIVE DEEPER INTO THE ISSUES ALREADY SHOWN.
+    """).strip().upper()
 
-        if more_projects=="YES":
-            page+=1
-            items=fetch_git_issues(language_chosen,user_issue,page)
-            git_messages,issue_number=clean_results(items,issue_number)
+    if more_projects=="YES":
+        page+=1
+        items=fetch_git_issues(language_chosen,user_issue,page)
+        git_messages,issue_number=clean_results(items,issue_number)
 
-            git_user_input=input("You: ")
-            start_git_response2=time.time()
-            git_ai_response=call_llm(git_user_input,git_messages)
-            print(git_ai_response.analysis)
+        git_user_input=input("You: ")
+        start_git_response2=time.time()
+        git_ai_response=call_llm(git_user_input,git_messages)
+        print(git_ai_response.analysis)
 
-            end_git_response2=time.time()
-            duration_git_response2=end_git_response2-start_git_response2
-            print(f"Response took {duration_git_response2:.2f} seconds.")
+        end_git_response2=time.time()
+        duration_git_response2=end_git_response2-start_git_response2
+        print(f"Response took {duration_git_response2:.2f} seconds.")
 
-        elif more_projects=="NO":
-            mentioned_numbers_int=[]
-            mentioned_numbers_int=git_ai_response.recommended_issues_list
-            if len(mentioned_numbers_int)==0:
-                print("NO DESIRABLE ISSUES WERE FOUND.")
-                break
-            else:
-                while True:
-                    try:
-                        git_deep_review=int(input(f"WHICH PROJECT DO YOU WANT A DEEPER INSIGHT ON?--{mentioned_numbers_int}").strip())
-                        if git_deep_review in mentioned_numbers_int:
-                            deep_review_url=(git_results[git_deep_review][2])
-                            deep_issue_data=review_git_fetch(deep_review_url)
-                            git_llm_review=in_depth_llm(deep_issue_data)
-                            print(git_llm_review)
-                            break
-                        else:
-                            print("PUT THE EXACT NUMERICAL ISSUE NUMBER SHOWN IN THE LIST.")
-                    except ValueError:
-                        print("PLEASE ENTER A VALID NUMBER")
+    elif more_projects=="NO":
+        mentioned_numbers_int=[]
+        mentioned_numbers_int=git_ai_response.recommended_issues_list
+        if len(mentioned_numbers_int)==0:
+            print("NO DESIRABLE ISSUES WERE FOUND.")
             break
-
-        if more_projects=="NO":
+        else:
+            while True:
+                try:
+                    git_deep_review=int(input(f"WHICH PROJECT DO YOU WANT A DEEPER INSIGHT ON?--{mentioned_numbers_int}").strip())
+                    if git_deep_review in mentioned_numbers_int:
+                        deep_review_url=(git_results[git_deep_review][2])
+                        deep_issue_data=review_git_fetch(deep_review_url)
+                        git_llm_review=in_depth_llm(deep_issue_data)
+                        print(git_llm_review)
+                        break
+                    else:
+                        print("PUT THE EXACT NUMERICAL ISSUE NUMBER SHOWN IN THE LIST.")
+                except ValueError:
+                    print("PLEASE ENTER A VALID NUMBER")
             break

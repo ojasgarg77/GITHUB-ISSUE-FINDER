@@ -57,8 +57,6 @@ NVIDIA_API_KEY=your_nvidia_api_key_here
 
 Replace each placeholder with your actual keys (see below for how to get them). Don't add quotes around the values.
 
-**Important:** Never commit your `.env` file to GitHub — it should be listed in `.gitignore`.
-
 ### Getting a GitHub token
 
 1. Log in to GitHub and go to **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** (or **Tokens (classic)**).
@@ -70,10 +68,10 @@ Replace each placeholder with your actual keys (see below for how to get them). 
 
 ### Getting an NVIDIA API key
 
-1. Go to [build.nvidia.com](https://build.nvidia.com) and sign up for a free account (email and possibly phone verification required).
+1. Go to [build.nvidia.com](https://build.nvidia.com) and sign up for a free account (email and phone verification required).
 2. Once logged in, open your account settings (or open any model's page and click **Get API Key**).
 3. Click **Generate Key**.
-4. Copy the key — it will start with `nvapi-` — and save it somewhere safe, as it's typically only shown once.
+4. Copy the key — it will start with `nvapi-` — and save it somewhere safe, as it's only shown once.
 5. Paste it as the value for `NVIDIA_API_KEY` in your `.env` file.
 
 NVIDIA's free tier includes a limited number of inference credits and a rate limit, so if you run the tool heavily you may eventually need to check your usage on build.nvidia.com.
@@ -86,10 +84,11 @@ With your virtual environment active and your `.env` file in place:
 python git_issue_finder.py
 ```
 
-Follow the prompts: pick a language, pick an issue label, then tell the AI what kind of issues you're looking for and your current skill level. From there you can ask for more results or dive deeper into any issue the AI mentioned for a full breakdown pulled directly from GitHub.
+Follow the prompts: pick a language, pick an issue label, then tell the AI what kind of issues you're looking for and your current skill level in detail. From there you can ask for more results or dive deeper into any issue the AI mentioned for a full breakdown pulled directly from GitHub.
 
 ## Notes
 
 - This tool only reads public GitHub data — it never modifies or writes anything to any repository.
 - If you see `GITHUB THREW AN ERROR`, double-check your `GITHUB_TOKEN` is valid and hasn't expired.
 - If the AI calls fail, double-check your `NVIDIA_API_KEY` and that you haven't exhausted your credits limit for the day.
+- This project is under active devlopment and is completely handwritten soon a new better version is going to be released which would help extract data for model training.
