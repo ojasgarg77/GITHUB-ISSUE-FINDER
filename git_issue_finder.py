@@ -14,8 +14,9 @@ class RecommendedIssues(BaseModel):
     recommended_issues_list:List[int]=Field(
         description="A list of integer issues numbers mentioned in the analysis. Output an empty list if none apply."
     )
-def fetch_git_issues(language,issue_label,page=1):
-    url=f'https://api.github.com/search/issues?q=is:issue label:"{issue_label}" language:{language} state:open&per_page=10&page={page}'
+def fetch_git_issues(language,issue_label,framework="all",page=1):
+    topic_query=f"{framework}" if framework and framework !="all" else ""
+    url=f'https://api.github.com/search/issues?q=is:issue label:"{issue_label}" language:{language}{topic_query} state:open&per_page=10&page={page}'
     headers={"Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}"}
     response=requests.get(url,headers=headers)
     if response.status_code==200:
@@ -49,6 +50,7 @@ def review_git_fetch(deep_review_url):
         return""
 
 def clean_results(items,issue_number):
+    global git_results
     git_messages=[]
     for item in items:
         git_result1=item["title"]
@@ -105,7 +107,10 @@ LANGUAGES={
     "6":"sql",
     "7":"typescript",
     "8":"c",
+    "9":"rust"
     }
+
+
 
 ISSUES={
     "1":"bug",
@@ -118,6 +123,103 @@ ISSUES={
     "8":"question",
     "9":"wontfix",
     }
+
+FRAMEWORKS = {
+    "python": {
+        "1": "pytorch",
+        "2": "tensorflow",
+        "3": "langchain",
+        "4": "fastapi",
+        "5": "django",
+        "6": "flask",
+        "7": "pandas",
+        "8": "numpy",
+        "9": "scikit-learn",
+        "10": "transformers",
+        "11": "celery",
+        "12": "pytest",
+        "13": "sqlalchemy",
+        "14": "pydantic",
+        "15": "streamlit",
+        "16": "gradio",
+        "17": "llama-index",
+        "18": "scrapy",
+        "19": "requests",
+        "20": "polars",
+        "21": "seaborn",
+        "22": "matplotlib",
+        "23": "opencv-python",
+        "24": "asyncio",
+        "25": "all"
+    },
+    "javascript": {
+        "1": "react",
+        "2": "nextjs",
+        "3": "vue",
+        "4": "svelte",
+        "5": "nodejs",
+        "6": "express",
+        "7": "nestjs",
+        "8": "electron",
+        "9": "all"
+    },
+    "java": {
+        "1": "spring-boot",
+        "2": "quarkus",
+        "3": "micronaut",
+        "4": "hibernate",
+        "5": "apache-spark",
+        "6": "android",
+        "7": "all"
+    },
+    "typescript": {
+        "1": "react",
+        "2": "angular",
+        "3": "nestjs",
+        "4": "nextjs",
+        "5": "trpc",
+        "6": "prisma",
+        "7": "sveltekit",
+        "8": "all"
+    },
+    "rust": {
+        "1": "burn",
+        "2": "candle",
+        "3": "ort",
+        "4": "tract",
+        "5": "linfa",
+        "6": "smartcore",
+        "7": "tch-rs",
+        "8": "ndarray",
+        "9": "tokenizers",
+        "10": "actix-web",
+        "11": "axum",
+        "12": "tokio",
+        "13": "rocket",
+        "14": "tauri",
+        "15": "bevy",
+        "16": "polars",
+        "17": "serde",
+        "18": "sqlx",
+        "19": "diesel",
+        "20": "reqwest",
+        "21": "yew",
+        "22": "leptos",
+        "23": "tonic",
+        "24": "clap",
+        "25": "anyhow",
+        "26": "tracing",
+        "27": "nalgebra",
+        "28": "all"
+    },
+    "c": {
+        "1": "opencv",
+        "2": "raylib",
+        "3": "sqlite",
+        "4": "curl",
+        "5": "all"
+    }
+}
 
 print("\nGITHUB ISSUE FINDER\n")
 git_results={}
@@ -135,6 +237,7 @@ while True:
         6. SQL
         7. TYPESCRIPT
         8. C
+        9. RUST
         """).strip()
 
     if language_chosen in LANGUAGES:
@@ -145,6 +248,24 @@ while True:
         break
     else:
         print("Not a valid option,try again")
+
+framework_chosen="all"
+if language_chosen in FRAMEWORKS:
+    available_frameworks=FRAMEWORKS[language_chosen]
+    while True:
+        print(f"WHICH LIBRARY/FRAMEWORK DO YOU WANT ISSUES ON?")
+        for num,fc_name in available_frameworks.items():
+            print(f" {num}. {fc_name.upper()}")
+        fc_input=input("CHOOSE A NUMBER OR NAME").strip().lower()
+
+        if fc_input in available_frameworks:
+            framework_chosen=available_frameworks[fc_input]
+            break
+        elif fc_input in available_frameworks.values():
+            framework_chosen=fc_input
+            break
+        else:
+            print("Not a valid option,try again")
 
 while True:
     user_issue=input("""\nWHAT ISSUE DO YOU WANT TO WORK ON?
@@ -168,7 +289,8 @@ while True:
     else:
         print("Not a valid option,try again")
 
-items=fetch_git_issues(language_chosen,user_issue,1)
+items=fetch_git_issues(language_chosen,user_issue,framework_chosen,1)
+
 git_messages,issue_number=clean_results(items,issue_number)
 
 print("\nPLEASE PROVIDE OUR AI WITH THE ISSUES YOU WANT TO FIX AND YOUR CURRENT CODING LEVEL FOR OPTIMAL FUNCTIONING.\n")
@@ -190,7 +312,8 @@ while True:
 
     if more_projects=="YES":
         page+=1
-        items=fetch_git_issues(language_chosen,user_issue,page)
+        items=fetch_git_issues(language_chosen,user_issue,framework_chosen,page)
+
         git_messages,issue_number=clean_results(items,issue_number)
 
         git_user_input=input("You: ")

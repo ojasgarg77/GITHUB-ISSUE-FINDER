@@ -1,6 +1,6 @@
 # GitHub Issue Finder
 
-A command-line tool that searches GitHub for open issues by language and label, then uses NVIDIA LLM to filter and summarize the ones that best match your coding level and interests. You can ask for more results, and dive deeper into any specific issue for a full, detailed analysis pulled directly from GitHub.
+A command-line tool that searches GitHub for open issues by language, library/framework, and label, then uses NVIDIA LLM to filter and summarize the ones that best match your coding level and interests. You can ask for more results, and dive deeper into any specific issue for a full, detailed analysis pulled directly from GitHub.
 
 ## Requirements
 
@@ -84,7 +84,7 @@ With your virtual environment active and your `.env` file in place:
 python git_issue_finder.py
 ```
 
-Follow the prompts: pick a language, pick an issue label, then tell the AI what kind of issues you're looking for and your current skill level in detail. From there you can ask for more results or dive deeper into any issue the AI mentioned for a full breakdown pulled directly from GitHub.
+Follow the prompts: pick a language, pick a library/framework (if available for that language), pick an issue label, then tell the AI what kind of issues you're looking for and your current skill level in detail. From there you can ask for more results or dive deeper into any issue the AI mentioned for a full breakdown pulled directly from GitHub.
 
 ## Notes
 
